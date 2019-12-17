@@ -22,3 +22,4 @@ C:\Users\Ruchi\source\repos\HandPApis_GraphQL\HandPApis_GraphQL\obj\Debug\netcor
 C:\Users\Ruchi\source\repos\HandPApis_GraphQL\HandPApis_GraphQL\obj\Debug\netcoreapp2.1\HandPApis_GraphQL.RazorTargetAssemblyInfo.cache
 C:\Users\Ruchi\source\repos\HandPApis_GraphQL\HandPApis_GraphQL\obj\Debug\netcoreapp2.1\HandPApis_GraphQL.dll
 C:\Users\Ruchi\source\repos\HandPApis_GraphQL\HandPApis_GraphQL\obj\Debug\netcoreapp2.1\HandPApis_GraphQL.pdb
+C:\Users\Ruchi\source\repos\HandPApis_GraphQL\HandPApis_GraphQL\obj\Debug\netcoreapp2.1\HandPApis_GraphQL.csprojAssemblyReference.cache
