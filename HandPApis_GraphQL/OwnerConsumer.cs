@@ -22,14 +22,14 @@ namespace HandPApis_GraphQL
             _client = client;
         }
 
-        public async Task<List<Appointment>> GetAppointments()
+        public async Task<List<Appointment>> GetAppointments(DateTime start, DateTime end)
         {
             _client.DefaultRequestHeaders.Add("Authorization", "SFMyNTY.g3QAAAACZAAEZGF0YW0AAAAHNTA6MTgxOGQABnNpZ25lZG4GAHI8YElsAQ.1t0AfDf1vU1u4DV4rbv4j1VYa7WHaIw3kyHG2B8jm38");
             var query = new GraphQLRequest
             {
-                Query = @"query getAppointments 
+                Query = @"query getAppointments ($start:DateTime, $end:DateTime)
                         { 
-                            appointments 
+                            appointments (updatedAtStart:$start, updatedAtEnd:$end)
                             { 
                                 start 
                                 insertedAt 
@@ -58,7 +58,8 @@ namespace HandPApis_GraphQL
                                     clientId
                                 } 
                             }
-                        }"
+                        }",
+                Variables = new { updatedAtStart = start, updatedAtEnd = end}
             };
             try
             {
@@ -75,42 +76,59 @@ namespace HandPApis_GraphQL
 
                 //string jsonstr = JsonConvert.SerializeObject(response);
 
-                Dictionary<TestClass, int> output = new Dictionary<TestClass, int>();
+                Dictionary<TestClass, int> output = new Dictionary<TestClass, int>(new TestClass.EqualityComparer());
+                HashSet<string> locationServiceSet = new HashSet<string>();
+                //Dictionary<string, bool> locationServiceMap = new Dictionary<string, bool>();
                 foreach (Appointment app in result)
                 {
-                    if (app.Start.HasValue && app.Type != null && app.Location!=null)
+                    if (app.Start.HasValue && app.Type != null && app.Location != null)
                     {
                         //service type
                         string serviceType = app.Type.Name.ToLower().Contains("care") || app.Type.Name.ToLower().Contains("play") ? app.Type.Name : "Style";
 
-                        TestClass test = new TestClass(app.Start.Value.Date, serviceType, app.Location.Name);
-                        if (!output.ContainsKey(test))
-                            output.Add(test, 1);
-                        else
-                            output[test] = output[test] + 1;
-       
+                        DateTime currDate = app.Start.Value.Date;
+                        DateTime lastDate = currDate.AddDays(14);
+                        DateTime firstDate = currDate.AddDays(-28);
+
+                        for (DateTime x = firstDate; x < lastDate; x = x.AddDays(1))
+                        {
+                            TestClass xTestClass = new TestClass(x, serviceType, app.Location.Name);
+                            if (!output.ContainsKey(xTestClass))
+                                output.Add(xTestClass, 0);
+
+                            TestClass totalAppClass = new TestClass(x, "Total No of Appointments", app.Location.Name);
+                            if (!output.ContainsKey(totalAppClass))
+                                output.Add(totalAppClass, 0);
+
+                            if (serviceType.ToLower().Contains("care"))
+                            {
+                                TestClass totalCare = new TestClass(x, "Total Care", app.Location.Name);
+                                if (!output.ContainsKey(totalCare))
+                                    output.Add(totalCare, 0);
+                            }
+                        }
+                        
+                        // increment by 1 for all three case below
+                        TestClass test = new TestClass(currDate, serviceType, app.Location.Name);
+                        output[test] = output[test] + 1;
+                        
                         // Aggregation - Total Care
-                        if(serviceType.ToLower().Contains("care"))
+                        if (serviceType.ToLower().Contains("care"))
                         {
                             TestClass totalCare = new TestClass(app.Start.Value.Date, "Total Care", app.Location.Name);
-                            if (!output.ContainsKey(totalCare))
-                                output.Add(totalCare, 1);
-                            else
-                                output[totalCare] = output[totalCare]+1;
+                            output[totalCare] = output[totalCare] + 1;
                         }
 
                         // Aggregation - Total Appointments
-                        TestClass totalAppointments = new TestClass(app.Start.Value.Date, "Total Appointments", app.Location.Name);
-                        if (!output.ContainsKey(totalAppointments))
-                            output.Add(totalAppointments, 1);
-                        else
-                            output[totalAppointments] = output[totalAppointments] + 1;
+                        TestClass totalAppointments = new TestClass(app.Start.Value.Date, "Total No of Appointments", app.Location.Name);
+                        output[totalAppointments] = output[totalAppointments] + 1;
+                        
                     }
                 }
 
-                output.OrderBy(x => x.Key.Location);
+
                 Debug.WriteLine(output.Count);
-                foreach (KeyValuePair<TestClass, int> kvp in output.OrderBy(x => x.Key.Location))
+                foreach (KeyValuePair<TestClass, int> kvp in output.OrderBy(x => x.Key.Location).ThenBy(x => x.Key.Type).ThenBy(x => x.Key.Start))
                 {
                     Debug.WriteLine("{0}, -> {1}", kvp.Key, output[kvp.Key].ToString(), kvp.Value);
                 }

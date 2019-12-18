@@ -20,8 +20,24 @@ namespace HandPApis_GraphQL.Controller
         [HttpPost]
         public async Task<IActionResult> Post()
         {
-            var owners = await _consumer.GetAppointments();
+            DateTime currentWeekMonday = DateTime.Now.StartOfWeek(DayOfWeek.Monday);
+            DateTime currentWeekSunday = DateTime.Now.StartOfWeek(DayOfWeek.Sunday);
+            DateTime firstDate = currentWeekMonday.AddDays(-28);
+            DateTime endDate = currentWeekSunday.AddDays(14);
+
+            var owners = await _consumer.GetAppointments(firstDate, endDate);
             return Ok(owners);
         }
+
+       
+
+    }
+}
+
+
+static class DateTimeExtensions
+{    public static DateTime StartOfWeek(this DateTime dt, DayOfWeek startOfWeek)
+    {
+        int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7; return dt.AddDays(-1 * diff).Date;
     }
 }
